@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>FB Group Backup login</title>
+<meta charset="UTF-8">
+</head>
+<body>
+<script>
+function get(name){
+   if(name=(new RegExp('[?&]'+encodeURIComponent(name)+'=([^&]*)')).exec(location.search))
+      return decodeURIComponent(name[1]);
+    }
+
+  var code = get('code');
+  var uri = "https://graph.facebook.com/v2.8/oauth/access_token?client_id=1699915190325737&redirect_uri=https://www.facebook.com/connect/login_success.html&scope=user_managed_groups&client_secret=6eade75606809874f407de1f44c06d58&code="+encodeURIComponent(code);
+</script>
+
+<!--
+  Below we include the Login Button social plugin. This button uses
+  the JavaScript SDK to present a graphical Login button that triggers
+  the FB.login() function when clicked.
+-->
+
+<a id="login">Login</button>
+
+</body>
+</html>
