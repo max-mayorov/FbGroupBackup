@@ -12,16 +12,15 @@ function get(name){
     }
 
   var code = get('code');
-  var uri = "https://graph.facebook.com/v2.8/oauth/access_token?client_id=1699915190325737&redirect_uri=https://www.facebook.com/connect/login_success.html&scope=user_managed_groups&client_secret=6eade75606809874f407de1f44c06d58&code="+encodeURIComponent(code);
+
+  var host = "dev.mayorov.photography";
+
+  var uri = "https://graph.facebook.com/v2.8/oauth/access_token?client_id=1699915190325737&redirect_uri=http://"+encodeURIComponent(host)+"/login_success.html&scope=user_managed_groups&client_secret=173e4f460136161376ccfb49536746a7&code="+encodeURIComponent(code);
+
+  window.location = uri;
 </script>
 
-<!--
-  Below we include the Login Button social plugin. This button uses
-  the JavaScript SDK to present a graphical Login button that triggers
-  the FB.login() function when clicked.
--->
 
-<a id="login">Login</button>
 
 </body>
 </html>

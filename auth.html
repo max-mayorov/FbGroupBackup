@@ -6,20 +6,13 @@
 </head>
 <body>
 
-<!--
-  Below we include the Login Button social plugin. This button uses
-  the JavaScript SDK to present a graphical Login button that triggers
-  the FB.login() function when clicked.
--->
-
-<a id="login">Login</button>
 
 <script>
 
   var host = "dev.mayorov.photography";
   var uri = "https://www.facebook.com/v2.8/dialog/oauth?client_id=1699915190325737&redirect_uri=http://"+encodeURIComponent(host)+"/login_success.html&response_type=code&scope=user_managed_groups";
 
-  document.getElementById("login").href = uri;
+  window.location = uri;
 </script>
 
 
