@@ -2,12 +2,11 @@ import urllib.request, json
 
 
 def getFeed(url, i):
-    print(i)
+    
     with urllib.request.urlopen(url) as response:
         data = json.loads(response.read().decode("utf-8"))
     
     print(url)
-    #print(data)
     print(i)
 
     dict = data["data"]
@@ -25,12 +24,23 @@ def getFeed(url, i):
     
     return dict
 
+def getMessage(post):
+    if "message" in post:
+        return post["message"]
+    elif "story" in post:
+        return post["story"]
+    else:
+        return ""
+
 
 token = "EAAYKEFkRUekBALvUVuZAiF9gXpFBxj3G7MEcr07lUl1qdi1Y8EvF3ku78x54oKE9O3SsuZANI4ZBXFMYcbw0F15OpaIIP1ZAQeBxZACe7TyC9b3tZBFWr9SUovLAWs69gtLBrErrn3oMIOmpRBCw9GZBd3rYP7DJpoZD"
-feed = getFeed("https://graph.facebook.com/v2.8/484923048324193/feed?child_attachments%2Ccaption%2Cdescription%2Cfrom%2Cfull_picture%2Cmessage%2Cpicture%2Ctype%2Cpermalink_url%7D&access_token=" + token, 0) 
+feed = getFeed("https://graph.facebook.com/v2.8/484923048324193/feed?fields=type,child_attachments,caption,description,from,full_picture,message,picture,permalink_url,story&access_token=" + token, 0) 
 
 for post in feed:
-    print(post["id"]+" "+post["message"].encode("cp866", "replace").decode("cp866"))
+    print(post["id"]+" "+post["type"]+" "+getMessage(post).encode("cp866", "replace").decode("cp866"))
+
+
+    
 
 
 
