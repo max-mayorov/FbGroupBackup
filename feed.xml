@@ -1,0 +1,11 @@
+<feed lastPost="123">
+    <post>
+        <id>123</id>
+        <permalink></permalink>
+        <author></author>
+        <timestamp></timestamp>
+        <text></text>
+        <thumbnail>./data/123/image.jpg</thumbnail>
+        <data>path to full res image or video</data>
+    </post>
+</feed>
