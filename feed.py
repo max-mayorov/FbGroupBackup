@@ -58,6 +58,7 @@ def indent(elem, level=0):
             elem.tail = i
 
 def download_file(url, id, folder):
+    folder = "data/" + folder
     os.makedirs(folder, 0o666, True)
     filename = url.split("?")[0].split("/")[-1]
 
