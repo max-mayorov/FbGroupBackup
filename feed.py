@@ -6,9 +6,6 @@ import xml.etree.ElementTree as ET
 import os
 import re
 
-pat = re.compile('.+[\/\?#=]([\w-]+\.[\w-]+(?:\.[\w-]+)?$)')
-def get_url_filename(url):
-    return url.split("?")[0].split("/")[-1]
 
 def get_feed(url, i, lastid):
     """Retrieves feed from FB group"""
@@ -62,7 +59,15 @@ def indent(elem, level=0):
 
 def download_file(url, id, folder):
     os.makedirs(folder, 0o666, True)
-    path = folder + "/" + id + "-" + get_url_filename(url)
+    filename = url.split("?")[0].split("/")[-1]
+
+    req = urllib.request.Request(url, method='HEAD')
+    head = urllib.request.urlopen(req)
+    c_fn = head.info().get_filename()
+    if c_fn:
+        filename = c_fn
+
+    path = folder + "/" + id + "-" + filename
     print("Downloading "+url+" into "+path)
     if not os.path.isfile(path):
         urllib.request.urlretrieve(url, path)
@@ -100,7 +105,24 @@ def get_data_video(fbpost):
     return download_file(data["source"],  fbpost["id"], "videos")
 
 def get_data_link(fbpost):
+    if re.search("googleusercontent.com$", fbpost["caption"]):
+        get_data_link_google(fbpost)
+    elif re.search("giphy.com$", fbpost["caption"]):
+        get_data_link_giphy(fbpost)
+    
+    return fbpost["link"]
+
+def get_data_link_giphy(fbpost):
+#    http://i.giphy.com/3oz8xViPRJiWSDd7O0.gif
+# http://i.giphy.com/3o6ZsWk0wjHqGshirS.gif
+#    http://giphy.com/gifs/3o6ZsWk0wjHqGshirS
+    match = re.search("[a-zA-Z0-9]+$", fbpost["link"])
+    if match:
+        return download_file("http://i.giphy.com/"+match.group()+".gif", fbpost["id"], "giphy")
     return ""
+
+def get_data_link_google(fbpost):
+    return download_file(fbpost["link"], fbpost["id"], "googleusercontent")
 
 def get_xmlelement(fbpost):
     """Retrieves XML element for a post"""
@@ -115,6 +137,10 @@ def get_xmlelement(fbpost):
     ET.SubElement(el, "data").text = get_data(fbpost)
     return el
 
+if not os.path.isfile('feed.xml'):
+    with open("feed.xml", "w") as feed_file:
+        feed_file.write('<?xml version="1.0" encoding="UTF-8"?>\n<?xml-stylesheet type="text/xsl" href="feed.xsl" ?>\n<feed>\n</feed>')
+
 tree = ET.parse('feed.xml')
 root = tree.getroot()
 ids = root.findall("./post/id")
@@ -123,8 +149,11 @@ if len(ids) > 0:
 else:
     last_id = ""
 
-token = "EAAYKEFkRUekBALvUVuZAiF9gXpFBxj3G7MEcr07lUl1qdi1Y8EvF3ku78x54oKE9O3SsuZANI4ZBXFMYcbw0F15OpaIIP1ZAQeBxZACe7TyC9b3tZBFWr9SUovLAWs69gtLBrErrn3oMIOmpRBCw9GZBd3rYP7DJpoZD"
-group_id = "484923048324193"
+with open('settings.json') as settings_file:    
+    settings = json.load(settings_file)
+
+token = settings["token"]
+group_id = settings["group_id"]
 graph_api = "https://graph.facebook.com/v2.8/"
 feed = get_feed(graph_api+group_id+"/feed?fields=updated_time,type,link,child_attachments,caption,description,object_id,from,full_picture,message,picture,permalink_url,story&access_token=" + token, 0, last_id) 
 
