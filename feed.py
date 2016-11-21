@@ -5,6 +5,7 @@ import json
 import xml.etree.ElementTree as ET
 import os
 import re
+import sys
 
 
 def get_feed(url, i, lastid):
@@ -26,9 +27,12 @@ def get_feed(url, i, lastid):
         idx = indexes[lastid]["index"] + 1
         return fbfeed[idx:]
 
-    #nextpage = data["paging"]["next"]
-    #if nextpage:
-    #    return get_feed(nextpage, i+1, lastid).extend(fbfeed)
+    nextpage = data["paging"]["next"]
+    if nextpage:
+        new_feed = get_feed(nextpage, i+1, lastid)
+        if new_feed:
+            new_feed.extend(fbfeed)
+            return new_feed
 
     return fbfeed
 
@@ -59,19 +63,28 @@ def indent(elem, level=0):
 
 def download_file(url, id, folder):
     folder = "data/" + folder
-    os.makedirs(folder, 0o666, True)
+    os.makedirs(folder, 0o777, True)
     filename = url.split("?")[0].split("/")[-1]
+    print("Downloading "+url)
 
     req = urllib.request.Request(url, method='HEAD')
-    head = urllib.request.urlopen(req)
-    c_fn = head.info().get_filename()
-    if c_fn:
-        filename = c_fn
+    try:
+        head = urllib.request.urlopen(req)
+    except:
+        print("Unexpected error downloading " + url + " :", sys.exc_info()[0])
+        return url
+    else:
+        c_fn = head.info().get_filename()
+        if c_fn:
+            filename = c_fn
 
     path = folder + "/" + id + "-" + filename
-    print("Downloading "+url+" into "+path)
     if not os.path.isfile(path):
-        urllib.request.urlretrieve(url, path)
+        try:
+            urllib.request.urlretrieve(url, path)
+        except:
+            print("Unexpected error downloading " + url + " :", sys.exc_info()[0])
+            return url
     return path
 
 def get_thumbnail(fbpost):
@@ -114,13 +127,23 @@ def get_data_link(fbpost):
     return fbpost["link"]
 
 def get_data_link_giphy(fbpost):
-#    http://i.giphy.com/3oz8xViPRJiWSDd7O0.gif
-# http://i.giphy.com/3o6ZsWk0wjHqGshirS.gif
-#    http://giphy.com/gifs/3o6ZsWk0wjHqGshirS
-    match = re.search("[a-zA-Z0-9]+$", fbpost["link"])
+    url = fbpost["link"]
+    
+    # retrieve final url/possible redirects
+    req = urllib.request.Request(url, method='HEAD')
+    try:
+        head = urllib.request.urlopen(req)
+    except:
+        print("Unexpected error downloading " + url + " :", sys.exc_info()[0])
+        return url
+
+    url = head.geturl()
+
+    match = re.search("[a-zA-Z0-9]+$", url)
+
     if match:
         return download_file("http://i.giphy.com/"+match.group()+".gif", fbpost["id"], "giphy")
-    return ""
+    return url
 
 def get_data_link_google(fbpost):
     return download_file(fbpost["link"], fbpost["id"], "googleusercontent")
