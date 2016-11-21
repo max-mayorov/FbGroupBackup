@@ -183,12 +183,24 @@ feed = get_feed(graph_api+group_id+"/feed?fields=updated_time,type,link,child_at
 
 
 for post in feed:
-    print(post["id"]+" "+post["type"]+" "+get_message(post))
+    print(post["id"]+" "+post["type"])
     root.insert(0, get_xmlelement(post))
 
 indent(root)
-tree = ET.ElementTree(root)
-tree.write('feed.xml')
+
+fake_root = ET.Element(None)
+# Add desired processing instructions.  Repeat as necessary.
+pi = ET.PI("xml-stylesheet", 'type="text/xsl" href="feed.xsl"')
+pi.tail = "\n"
+fake_root.append(pi)
+
+# Add real root as last child of fake root
+fake_root.append(root)
+
+tree = ET.ElementTree(fake_root)
+
+#<?xml-stylesheet type="text/xsl" href="feed.xsl" ?>
+tree.write('feed.xml', encoding="UTF-8", xml_declaration=True)
 
 print ("Done")
 
