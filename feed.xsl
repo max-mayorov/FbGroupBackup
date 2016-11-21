@@ -1,29 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 <xsl:template match="/">
-<html> 
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="feed.css">
+  <title><xsl:value-of select="feed/@name" /></title>
+</head> 
 <body>
   <h2>FB Group Feed</h2>
-  <table border="1">
-    <tr bgcolor="#9acd32">
-      <th style="text-align:left">id</th>
-      <th style="text-align:left">type</th>
-      <th style="text-align:left">author</th>
-      <th style="text-align:left">timestamp</th>
-      <th style="text-align:left">image</th>
-      <th style="text-align:left">text</th>
-    </tr>
+  <div class="container">
     <xsl:for-each select="feed/post">
-    <tr>
-      <td><a href="{permalink}"><xsl:value-of select="id"/></a></td>
-      <td><xsl:value-of select="type"/></td>
-      <td><xsl:value-of select="author"/></td>
-      <td><xsl:value-of select="timestamp"/></td>
-      <td><a href="{data}"><img src="{thumbnail}"/></a></td>
-      <td><xsl:value-of select="text"/></td>
-    </tr>
+      <div class="item">
+        <div class="image">
+          <a href="{data}">
+            <img src="{thumbnail}"/>
+          </a>
+        </div>
+        <div class="metadata">
+          <a class="postid" href="{permalink}"><xsl:value-of select="id"/></a>
+          <span class="type"><xsl:value-of select="type"/></span>
+          <span class="author"><xsl:value-of select="author"/></span>
+          <span class="timestamp"><xsl:value-of select="timestamp"/></span>
+        </div>  
+        <div class="text">
+          <xsl:value-of select="text"/>
+        </div>
+      </div>
+      <div class="spacer"></div>
     </xsl:for-each>
-  </table>
+  </div>
 </body>
 </html>
 </xsl:template>
