@@ -1,4 +1,7 @@
+#!/bin/sh
+
 #copy this file to /etc/cron.daily/
+
 d=$(pwd)
 i=0
 loc="/media/a8510270-6ecd-4eba-8482-b16ee4af414a/NikiKiri"
