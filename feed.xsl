@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 <xsl:template match="/">
-<!DOCTYPE html>
 <html>
 <head>
-  <link rel="stylesheet" href="feed.css">
-  <title><xsl:value-of select="feed/@name" /></title>
+  <link rel="stylesheet" href="feed.css"/>
+  <title><xsl:value-of select="/feed/@name" /></title>
 </head> 
 <body>
-  <h2>FB Group Feed</h2>
+  <div class="title">
+    <h2><xsl:value-of select="/feed/@name" /></h2>
+    <h3><xsl:value-of select="/feed/@description" /></h3>
+  </div>
   <div class="container">
+    <div class="spacer"></div>
     <xsl:for-each select="feed/post">
       <div class="item">
         <div class="image">
@@ -18,8 +21,9 @@
           </a>
         </div>
         <div class="metadata">
-          <a class="postid" href="{permalink}"><xsl:value-of select="id"/></a>
-          <span class="type"><xsl:value-of select="type"/></span>
+          <img src="img/{type}.png"/>
+          <span class="postid"><xsl:value-of select="id"/></span>
+          <span class="type"><a href="{permalink}"><xsl:value-of select="type"/></a></span>
           <span class="author"><xsl:value-of select="author"/></span>
           <span class="timestamp"><xsl:value-of select="timestamp"/></span>
         </div>  
@@ -30,6 +34,7 @@
       <div class="spacer"></div>
     </xsl:for-each>
   </div>
+  <div class="creds">Icons made by <a href="http://www.flaticon.com/authors/madebyoliver" title="Madebyoliver">Madebyoliver</a> from <a href="http://www.flaticon.com" title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>
 </body>
 </html>
 </xsl:template>

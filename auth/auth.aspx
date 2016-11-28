@@ -6,7 +6,7 @@
 
 <script runat="server">
     private const string graphApi = "https://graph.facebook.com/v2.8";
-    private const string clientSecret = "173e4f460136161376ccfb49536746a7";
+    private const string clientSecret = ConfigurationManager.AppSettings["ClientSecret"];
     private const string clientId = "1699915190325737";
 
     public string Token { get; set; }
@@ -70,9 +70,42 @@
 </head>
 <body>
     <div>
+        <h1>Facebook group backup</h1>
+
+        <p>Downloads content of a Facebook group to a local drive, including attached to the post photos and videos.</p>
+
+        <p>Prerequisites:
+            <ul>
+                <li>Python 3</li>
+            </ul>
+        </p>
+
+        <p>How to use:
+            <ol>
+                <li>Download installation <a href="package.zip">package</a></li>
+                <li>Unzip the package to a folder where group will be downloaded</li>
+                <li>Select a group where you are admin in the select below and download settings.json to the folder where package.zip is extracted</li>
+                <li>Run <pre>python3 feed.py</pre></li>
+            </ol>
+        </p>
+
+        <p>If the list below is empty, try to <a href="auth.html">authenticate this app</a> on facebook</p>
         <select id="group" onselect="groupSelect"></select><br />
         <pre id="settings" ></pre><br />
         <a href="" id="a">Download settings.json</a>
+
+
+        <p>What is in the package
+            <ul>
+                <li><pre>feed.py</pre> - main script, retrieves the backup of a facebook group</li>
+
+            </ul>
+        </p>
+        
+        <p>How does it work</p>
+        <p>Github</p>
+
+
     </div>
     <script type="text/javascript">
 

@@ -1,0 +1,15 @@
+body {font-family: Verdana, Geneva, Tahoma, sans-serif; color: #333;}
+
+.spacer {clear:both; padding: 1em 0 0 1em; border-top: dashed #AAA 1pt;}
+
+.item .image img {float:left; padding: 0 10pt 10pt 0;}
+
+.item .metadata {font-size: 0.7em; color: #888;}
+
+.item .metadata img {float:left; padding: 0 2pt 2pt 0;}
+.item .metadata .postid {display:none;}
+.item .metadata span {display: block;}
+
+.item .text {padding: 1em 0 0 0; font-size: 1.2em;}
+
+.creds {font-size: 0.3em;}

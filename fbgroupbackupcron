@@ -1,0 +1,5 @@
+#!/bin/sh
+#change the path to fbgroupbackup.sh 
+#copy this file to /etc/cron.daily/
+/media/a8510270-6ecd-4eba-g8482-b16ee4af414a/NikiKiri/fbgroupbackup.sh run
+exit 0
