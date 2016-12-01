@@ -8,6 +8,7 @@ import re
 import sys
 import logging
 import datetime
+import time
 
 os.makedirs("log", 0o766, True)
 logging.basicConfig(
@@ -26,8 +27,11 @@ def get_graph_url(endpoint, fields):
     """Generates Graph API url for endpoint and fields"""
     return "{}{}?fields={}&access_token={}".format(GRAPH_API, endpoint, fields, TOKEN)
 
-def get_feed(url, i, lastid):
+def get_feed(url, i, last_timestamp=None):
     """Retrieves feed from FB group"""
+    if last_timestamp:
+        url += "&since=" + str(last_timestamp)
+
     with urllib.request.urlopen(url) as response:
         data = json.loads(response.read().decode("utf-8"))
 
@@ -39,15 +43,15 @@ def get_feed(url, i, lastid):
     if len(fbfeed) == 0:
         return fbfeed
 
-    indexes = dict((d["id"], dict(d, index=index)) for (index, d) in enumerate(fbfeed))
+    # indexes = dict((d["id"], dict(d, index=index)) for (index, d) in enumerate(fbfeed))
 
-    if lastid in indexes:
-        idx = indexes[lastid]["index"] + 1
-        return fbfeed[idx:]
+    # if lastid in indexes:
+    #     idx = indexes[lastid]["index"] + 1
+    #     return fbfeed[idx:]
 
     nextpage = data["paging"]["next"]
     if nextpage:
-        new_feed = get_feed(nextpage, i+1, lastid)
+        new_feed = get_feed(nextpage, i+1)
         if new_feed:
             new_feed.extend(fbfeed)
             return new_feed
@@ -55,6 +59,7 @@ def get_feed(url, i, lastid):
     return fbfeed
 
 def get_group_meta():
+    """Retrieves meta information for the group"""
     with urllib.request.urlopen(get_graph_url(GROUP_ID, "name,description")) as response:
         data = json.loads(response.read().decode("utf-8"))
     return data
@@ -62,11 +67,19 @@ def get_group_meta():
 def get_message(fbpost):
     """Retrieves message from a fb post"""
     if "message" in fbpost:
-        return fbpost["message"]
+        message = fbpost["message"]
     elif "story" in fbpost:
-        return fbpost["story"]
+        message = fbpost["story"]
     else:
-        return ""
+        message = ""
+
+    if fbpost["type"] == "status" \
+        and "attachments" in fbpost \
+        and len(fbpost["attachments"]["data"]) == 1 \
+        and "description" in fbpost["attachments"]["data"][0]:
+        message += "\n\r" + fbpost["attachments"]["data"][0]["description"]
+
+    return message
 
 def indent(elem, level=0):
     '''Indents XML documnet'''
@@ -114,10 +127,21 @@ def download_file(url, id, folder):
     return path
 
 def get_thumbnail(fbpost):
-    if not "full_picture" in fbpost:
+    """Downloads thumbnail for the post"""
+    url = None
+    if "full_picture" in fbpost:
+        url = fbpost["full_picture"]
+    elif fbpost["type"] == "status" \
+        and "attachments" in fbpost \
+        and len(fbpost["attachments"]["data"]) \
+        and "media" in fbpost["attachments"]["data"][0] \
+        and "image" in fbpost["attachments"]["data"][0]["media"]:
+        url = fbpost["attachments"]["data"][0]["media"]["image"]["src"]
+
+    if url:
+        return download_file(url, fbpost["id"], "thumbnails")
+    else:
         return ""
-    url = fbpost["full_picture"]
-    return download_file(url, fbpost["id"], "thumbnails")
 
 def get_data(fbpost):
     if "object_id" in fbpost and fbpost["type"] == "photo":
@@ -126,7 +150,17 @@ def get_data(fbpost):
         return get_data_video(fbpost)
     if "link" in fbpost and fbpost["type"] == "link":
         return get_data_link(fbpost)
+    if fbpost["type"] == "status" and "attachments" in fbpost \
+        and len(fbpost["attachments"]["data"]) > 0:
+        return get_data_first_attachment(fbpost)
     logging.warning("Unable to determine post data, postid=%s", fbpost["id"])
+    return ""
+
+def get_data_first_attachment(fbpost):
+    if "media" in fbpost["attachments"]["data"][0] \
+        and "image" in fbpost["attachments"]["data"][0]["media"]:
+        return download_file(fbpost["attachments"]["data"][0]["media"]["image"]["src"],
+                             fbpost["id"], "attachment")
     return ""
 
 def get_data_photo(fbpost):
@@ -189,11 +223,18 @@ def get_xmlelement(fbpost):
     ET.SubElement(element, "type").text = fbpost["type"]
     ET.SubElement(element, "permalink").text = fbpost["permalink_url"]
     ET.SubElement(element, "author").text = fbpost["from"]["name"]
-    ET.SubElement(element, "timestamp").text = fbpost["updated_time"]
+    ET.SubElement(element, "updatedTime").text = fbpost["updated_time"]
+    ET.SubElement(element, "createdTime").text = fbpost["created_time"]
+    ET.SubElement(element, "timestamp").text = str(datetime_to_timestamp(fbpost["created_time"]))
     ET.SubElement(element, "text").text = get_message(fbpost)
     ET.SubElement(element, "thumbnail").text = get_thumbnail(fbpost)
     ET.SubElement(element, "data").text = get_data(fbpost)
     return element
+
+def datetime_to_timestamp(xml_datetime):
+    """Retrieves Unix time corresponding to an xml date time"""
+    dt_ = time.strptime(xml_datetime, '%Y-%m-%dT%H:%M:%S+0000')
+    return int(time.mktime(dt_))
 
 def main():
     feedxml_file = 'feed-'+GROUP_ID+'.xml'
@@ -211,23 +252,26 @@ def main():
     root = tree.getroot()
     root.set("name", group_meta["name"])
     root.set("description", group_meta["description"])
-    ids = root.findall("./post/id")
-    if len(ids) > 0:
-        last_id = ids[0].text
-        logging.info("Last downloaded post id: %s", last_id)
-    else:
-        last_id = ""
+    timestamps = list(map(lambda p: int(p.text), root.findall("./post/timestamp")))
+    ids = list(map(lambda p: p.text, root.findall("./post/id")))
 
+
+    if len(timestamps) > 0:
+        last_timestamp = max(timestamps)
+        logging.info("Last downloaded timestamp: %s", last_timestamp)
+    else:
+        last_timestamp = None
 
     feed = get_feed(get_graph_url(GROUP_ID+"/feed",
-                                  "updated_time,type,link,child_attachments,caption,description,"
-                                  "object_id,from,full_picture,message,picture,permalink_url,"
-                                  "story"),
-                    0, last_id)
+                                  "updated_time,type,link,caption,created_time,description,"
+                                  "story,from,full_picture,message,picture,permalink_url,"
+                                  "object_id,attachments"),
+                    0, last_timestamp)
 
     for post in feed:
         logging.info("GET POST %s OF TYPE %s", post["id"], post["type"])
-        root.insert(0, get_xmlelement(post))
+        if post["id"] not in ids:
+            root.insert(0, get_xmlelement(post))
 
     indent(root)
 
@@ -247,5 +291,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

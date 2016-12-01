@@ -1,5 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+<xsl:template name="insertBreaks">
+  <xsl:param name="pText" select="."/>
+
+  <xsl:choose>
+    <xsl:when test="not(contains($pText, '&#xA;'))">
+      <xsl:copy-of select="$pText"/>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:value-of select="substring-before($pText, '&#xA;')"/>
+      <br />
+      <xsl:call-template name="insertBreaks">
+        <xsl:with-param name="pText" select=
+          "substring-after($pText, '&#xA;')"/>
+      </xsl:call-template>
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:template>
+
 <xsl:template match="/">
 <html>
 <head>
@@ -28,7 +47,9 @@
           <span class="timestamp"><xsl:value-of select="timestamp"/></span>
         </div>  
         <div class="text">
-          <xsl:value-of select="text"/>
+          <xsl:call-template name="insertBreaks" >
+            <xsl:with-param name="pText" select="text" />
+          </xsl:call-template>
         </div>
       </div>
       <div class="spacer"></div>
