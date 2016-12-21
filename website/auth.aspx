@@ -6,15 +6,34 @@
 
 <script runat="server">
     private const string graphApi = "https://graph.facebook.com/v2.8";
-    private const string clientSecret = ConfigurationManager.AppSettings["ClientSecret"];
+    private readonly string clientSecret = ConfigurationManager.AppSettings["ClientSecret"];
     private const string clientId = "1699915190325737";
+    private const string logFilePath = "~/.log";
+
+    private readonly object _lock = new object();
 
     public string Token { get; set; }
     public string Groups { get; set; }
 
+    public string AuthError {get;set;}
+
+    private void Log(string uri, string message)
+    {
+        var s = string.Format("{0:u} - {1} - {2}", DateTime.Now, uri, message);
+        var logFile = Server.MapPath(logFilePath);
+        lock(_lock)
+        {
+            if(!File.Exists(logFile))
+                File.WriteAllText(logFile, s);
+            else
+                File.AppendAllText(logFile, s);
+        }
+    }
+
     protected void Page_Init(object sender, EventArgs e)
     {
         var code = Request.QueryString["code"];
+        AuthError = "";
 
         if (String.IsNullOrEmpty(code))
             return;
@@ -34,7 +53,12 @@
             catch (WebException ex)
             {
                 using (var sr = new StreamReader(ex.Response.GetResponseStream()))
-                    Response.Write("\nError: " + uri + "\n" + sr.ReadToEnd());
+                {
+                    var s = sr.ReadToEnd();
+                    Log(uri, s);
+                    AuthError += "<br/>" + s;
+                    
+                }
             }
         }
 
@@ -58,7 +82,11 @@
             catch (WebException ex)
             {
                 using (var sr = new StreamReader(ex.Response.GetResponseStream()))
-                    Response.Write("\nError: " + uri + "\n" + sr.ReadToEnd());
+                {
+                    var s = sr.ReadToEnd();
+                    Log(uri, s);
+                    AuthError += "<br/>" + s;
+                }
             }
         }
     }
@@ -70,40 +98,70 @@
 </head>
 <body>
     <div>
+        
+
         <h1>Facebook group backup</h1>
 
         <p>Downloads content of a Facebook group to a local drive, including attached to the post photos and videos.</p>
 
-        <p>Prerequisites:
+        <%if(!String.IsNullOrEmpty(AuthError))
+          {%>
+
+        <p> <strong>Facebook authentication error:</strong> <br/><%= AuthError %> </p>
+        <p> Try to <a href="index.html">reauthenticate</a> on facebook</p>
+        <%}%>
+
+        <h2>How to use:</h2>
+        <p>
+            <ol>
+                <li>Download installation <a href="package.zip">package</a></li>
+                <li>Unzip the package to a folder where group will be downloaded</li>
+                <li>Select a group where you are admin in the select below and download settings.json to the folder where package.zip is extracted</li>
+                <li>Run <tt>python3 feed.py</tt></li>
+            </ol>
+        </p>
+
+        <p>If the list below is empty, try to <a href="index.html">authenticate this app</a> on facebook</p>
+        <select id="group" onselect="groupSelect"></select><br />
+        <pre id="settings" ></pre><br />
+        <a href="" id="a">Download settings.json</a>
+
+        <h2>Prerequisites:</h2>
+        <p>
             <ul>
                 <li>Python 3</li>
             </ul>
         </p>
 
-        <p>How to use:
-            <ol>
-                <li>Download installation <a href="package.zip">package</a></li>
-                <li>Unzip the package to a folder where group will be downloaded</li>
-                <li>Select a group where you are admin in the select below and download settings.json to the folder where package.zip is extracted</li>
-                <li>Run <pre>python3 feed.py</pre></li>
-            </ol>
-        </p>
-
-        <p>If the list below is empty, try to <a href="auth.html">authenticate this app</a> on facebook</p>
-        <select id="group" onselect="groupSelect"></select><br />
-        <pre id="settings" ></pre><br />
-        <a href="" id="a">Download settings.json</a>
-
-
-        <p>What is in the package
+        <h2>What is in the package</h2>
+        <p>
             <ul>
-                <li><pre>feed.py</pre> - main script, retrieves the backup of a facebook group</li>
-
+                <li><tt>feed.py</tt> - main script, retrieves the backup of a facebook group</li>
+                <li><tt>feed.xsl</tt> - transformation script for the XML created by feed.py</li>
+                <li><tt>feed.css</tt> - css for the transformed XML</li>
+                <li><tt>fbgroupbackup.sh</tt> - example of a bash script to retrieve a backup of a group</li>
+                <li><tt>fbgroupbackupcron</tt> - example of a cron job to download daily backup of a group</li>
+                <li><tt>fbgroupbackuphttpd</tt> - example of a http daemon to show the backed up group contents</li>
+                <li><tt>index.html</tt> - example of a default index page which redirects to group backup xml</li>
             </ul>
         </p>
         
-        <p>How does it work</p>
-        <p>Github</p>
+        <h2>How does it work</h2>
+        <p>
+            The python 3 script <tt>feed.py</tt> uses Facebook API to download contents of a group. 
+            <br/>Everytime script runs it retrieves all posts in the group since the last execution of the script.
+            <br/>The posts are saved in an XML file named <tt>feed-&lt;group_id&gt;.xml</tt>.
+            <br/>All content linked to a post, like attached photos, facebook videos as well as certain types of linked content is downloaded locally into <tt>data</tt> folder. If linked content is not supported, only thumbnail ttview is downloaded. 
+        </p>
+        <p>Supported external content:
+            <ul>
+                <li>Giphy</li>
+                <li>Google Photos shared video or gifs (googleusercontent)</li>
+            </ul>
+        </p>
+
+        <h2>External links</h2>
+        <p><a href="https://github.com/mcsdwarken/FbGroupBackup">Github</a></p>
 
 
     </div>
