@@ -17,9 +17,12 @@
 
     public string AuthError {get;set;}
 
-    private void Log(string uri, string message)
+    private void Log(string status, string uri, string message)
     {
-        var s = string.Format("{0:u} - {1} - {2}", DateTime.Now, uri, message);
+        if(String.Compare(status, ConfigurationManager.AppSettings["LogLevel"]) > 0)
+            return;
+
+        var s = string.Format("\n{0:u}\t{1}\t{2} - {3}", status, DateTime.Now, uri, message);
         var logFile = Server.MapPath(logFilePath);
         lock(_lock)
         {
@@ -49,13 +52,14 @@
             try
             {
                 auth = webclient.DownloadString(uri);
+                Log("SUCCESS", uri, auth);
             }
             catch (WebException ex)
             {
                 using (var sr = new StreamReader(ex.Response.GetResponseStream()))
                 {
                     var s = sr.ReadToEnd();
-                    Log(uri, s);
+                    Log("ERROR", uri, s);
                     AuthError += "<br/>" + s;
                     
                 }
@@ -78,13 +82,14 @@
             try
             {
                 Groups = webclient.DownloadString(uri);
+                Log("SUCCESS", uri, Groups);
             }
             catch (WebException ex)
             {
                 using (var sr = new StreamReader(ex.Response.GetResponseStream()))
                 {
                     var s = sr.ReadToEnd();
-                    Log(uri, s);
+                    Log("ERROR", uri, s);
                     AuthError += "<br/>" + s;
                 }
             }
