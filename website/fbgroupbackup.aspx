@@ -38,6 +38,8 @@
         var code = Request.QueryString["code"];
         AuthError = "";
 
+        // Read current FB authentication status ? Or client side.
+
         if (String.IsNullOrEmpty(code))
             return;
 
@@ -106,6 +108,22 @@
         
 
         <h1>Facebook group backup</h1>
+
+        //TODO: check facebook status & permissions, show a message with a current permission
+        <div id="fbstatus">
+            <div id="notauthenticated">
+                You need to authenticate on facebook before using this app
+                <a href="https://www.facebook.com/v2.8/dialog/oauth?client_id=1699915190325737&redirect_uri=http://dev.mayorov.photography/fbgroupbackup.aspx&response_type=code&scope=user_managed_groups">
+                <img src="https://scontent.xx.fbcdn.net/t39.2178-6/851579_209602122530903_1060396115_n.png"/>
+                </a>
+            </div>
+            <div id="authenticated">
+                // Check that permissions are sufficient
+                // If not : option to reauthenticate
+                
+                // Logout button here
+            </div>
+        </div>
 
         <p>Downloads content of a Facebook group to a local drive, including attached to the post photos and videos.</p>
 
